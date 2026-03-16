@@ -47,6 +47,7 @@ async function handleCardSearch(event) {
 function handleDeckBuild(event) {
   event.preventDefault();
   state.deck = {
+    type: document.querySelector("#deck-type").value,
     colors: getSelectedColors(),
     strategy: document.querySelector("#deck-strategy").value,
     goal: document.querySelector("#deck-goal").value.trim(),
@@ -116,18 +117,20 @@ function renderDeckSummary() {
 
   deckSummary.className = "deck-summary";
   deckSummary.innerHTML = `
-    <strong>${escapeHtml(describeColors(deck.colors))} ${escapeHtml(titleCase(deck.strategy))} deck</strong>
+    <strong>${escapeHtml(describeColors(deck.colors))} ${escapeHtml(titleCase(deck.strategy))} ${escapeHtml(describeDeckType(deck.type))}</strong>
     <p>${escapeHtml(deck.goal || "No deck goal written yet.")}</p>
+    <p><span class="inline-label">Build lens:</span> ${escapeHtml(describeDeckLens(deck.type))}</p>
     <p><span class="inline-label">Must-play cards:</span> ${escapeHtml(deck.mustPlay.length ? deck.mustPlay.join(", ") : "None yet")}</p>
   `;
 }
 
 function renderSuggestions() {
   const suggestions = buildSuggestions();
+  const heading = state.deck.type === "commander" ? "Commander shell suggestions" : "Deck suggestions";
 
   suggestionList.className = "suggestion-list";
   suggestionList.innerHTML = suggestions.length
-    ? suggestions.map((item) => `
+    ? `<div class="eyebrow">${escapeHtml(heading)}</div>${suggestions.map((item) => `
         <article class="suggestion-card">
           <div class="suggestion-card__top">
             <div>
@@ -139,7 +142,7 @@ function renderSuggestions() {
           <p>${escapeHtml(item.reason)}</p>
           <p><span class="inline-label">Why it fits:</span> ${escapeHtml(item.detail)}</p>
         </article>
-      `).join("")
+      `).join("")}`
     : '<div class="empty-state">No suggestions yet. Build a deck plan to see recommended cards.</div>';
 }
 
@@ -242,6 +245,7 @@ function describeInteractions(card) {
 function buildSuggestions() {
   const deck = state.deck;
   const profile = getStrategyProfile(deck.strategy);
+  const commanderSupport = deck.type === "commander" ? getCommanderSupport(deck.strategy) : [];
   const anchors = deck.mustPlay.map((name) => name.toLowerCase());
   const colorSet = new Set(deck.colors);
 
@@ -249,22 +253,26 @@ function buildSuggestions() {
     return [];
   }
 
-  return profile.cards
+  return [...profile.cards, ...commanderSupport]
     .filter((card) => fitsColors(card.colors, colorSet))
     .filter((card) => !anchors.includes(card.name.toLowerCase()))
+    .filter((card, index, allCards) => allCards.findIndex((candidate) => candidate.name === card.name) === index)
     .map((card) => {
       const namedSynergy = card.tags.some((tag) => anchors.some((anchor) => anchor.includes(tag)));
+      const commanderFit = card.tags.includes("commander");
       return {
         name: card.name,
         bucket: card.bucket,
-        fit: namedSynergy ? "High synergy" : "Strong fit",
+        fit: namedSynergy ? "High synergy" : commanderFit ? "Commander staple" : "Strong fit",
         reason: namedSynergy
           ? `This lines up especially well with at least one of your must-play cards.`
+          : commanderFit
+            ? `This is a common glue piece for ${titleCase(deck.strategy)} commander shells.`
           : `This supports a ${titleCase(deck.strategy)} plan in ${describeColors(deck.colors)}.`,
         detail: card.detail
       };
     })
-    .slice(0, 8);
+    .slice(0, deck.type === "commander" ? 12 : 8);
 }
 
 function getStrategyProfile(strategy) {
@@ -354,6 +362,59 @@ function getStrategyProfile(strategy) {
   return profiles[strategy] || profiles.tokens;
 }
 
+function getCommanderSupport(strategy) {
+  const support = {
+    any: [
+      cardSuggestion("Sol Ring", [], "Ramp", "The default commander accelerator and one of the easiest ways to jump ahead on mana.", ["commander", "ramp"]),
+      cardSuggestion("Arcane Signet", [], "Fixing", "Smooth, universal commander mana that helps almost any multicolor shell.", ["commander", "ramp", "fixing"]),
+      cardSuggestion("Command Tower", [], "Mana base", "A near-free include for multicolor commander decks.", ["commander", "land", "fixing"]),
+      cardSuggestion("Swiftfoot Boots", [], "Protection", "Keeps your commander or main engine alive while adding haste pressure.", ["commander", "protection"])
+    ],
+    tokens: [
+      cardSuggestion("Skullclamp", [], "Card draw", "Commander token decks want ways to turn extra bodies into fresh cards.", ["commander", "token", "draw"]),
+      cardSuggestion("Welcoming Vampire", ["W"], "Card draw", "Rewards steady creature production without asking much from the deck.", ["commander", "token", "draw"])
+    ],
+    control: [
+      cardSuggestion("Mystic Remora", ["U"], "Card draw", "Commander tables give this lots of targets and help reactive decks keep up.", ["commander", "draw", "control"]),
+      cardSuggestion("Generous Gift", ["W"], "Removal", "Broad removal matters more in commander because threats vary so much.", ["commander", "removal"])
+    ],
+    aggro: [
+      cardSuggestion("Reconnaissance", ["W"], "Combat support", "Lets you attack aggressively while still pulling creatures out of bad combat.", ["commander", "combat"]),
+      cardSuggestion("Dolmen Gate", [], "Protection", "Keeps wide combat decks from losing momentum to blocks.", ["commander", "combat", "protection"])
+    ],
+    ramp: [
+      cardSuggestion("Three Visits", ["G"], "Ramp", "Cheap land-based ramp is especially strong in commander shells.", ["commander", "ramp"]),
+      cardSuggestion("Skyshroud Claim", ["G"], "Ramp", "Jumps you hard into the top of your curve in slower commander games.", ["commander", "ramp"])
+    ],
+    graveyard: [
+      cardSuggestion("Victimize", ["B"], "Recursion", "Great commander glue card for decks that expect creatures to die or mill over.", ["commander", "graveyard"]),
+      cardSuggestion("Animate Dead", ["B"], "Recursion", "Efficient reanimation gets even better in long multiplayer games.", ["commander", "graveyard", "reanimate"])
+    ],
+    lifegain: [
+      cardSuggestion("Authority of the Consuls", ["W"], "Enabler", "Stacks incidental life gain while slowing opposing creature decks.", ["commander", "lifegain"]),
+      cardSuggestion("Aetherflux Reservoir", [], "Finisher", "Commander lifegain shells often want a payoff that can actually close the game.", ["commander", "lifegain", "finisher"])
+    ],
+    spells: [
+      cardSuggestion("Talrand, Sky Summoner", ["U"], "Payoff", "Turns spell chains into a real board while you do your normal thing.", ["commander", "spells", "token"]),
+      cardSuggestion("Thousand-Year Storm", ["U", "R"], "Finisher", "A top-end commander payoff that makes long spell turns explode.", ["commander", "spells", "finisher"])
+    ],
+    artifacts: [
+      cardSuggestion("Thoughtcast", ["U"], "Card draw", "Cheap payoff draw gets easier to enable in commander artifact shells.", ["commander", "artifact", "draw"]),
+      cardSuggestion("Padeem, Consul of Innovation", ["U"], "Protection", "Gives artifact decks both insulation and card flow.", ["commander", "artifact", "protection"])
+    ],
+    counters: [
+      cardSuggestion("Deepglow Skate", ["U"], "Finisher", "Commander counters decks love a card that suddenly doubles all their work.", ["commander", "counter", "finisher"]),
+      cardSuggestion("Inspiring Call", ["G"], "Protection", "Protects your board while turning a developed counters plan into cards.", ["commander", "counter", "draw"])
+    ],
+    sacrifice: [
+      cardSuggestion("Bastion of Remembrance", ["B"], "Drain payoff", "Commander sacrifice decks want sticky sources of repeated drain.", ["commander", "sacrifice", "lifegain"]),
+      cardSuggestion("Zulaport Cutthroat", ["B"], "Drain payoff", "Gives sacrifice loops and creature trading real multiplayer reach.", ["commander", "sacrifice", "lifegain"])
+    ]
+  };
+
+  return [...support.any, ...(support[strategy] || [])];
+}
+
 function cardSuggestion(name, colors, bucket, detail, tags) {
   return { name, colors, bucket, detail, tags };
 }
@@ -376,6 +437,7 @@ function loadState() {
   return {
     lastCard: null,
     deck: {
+      type: "standard",
       colors: [],
       strategy: "tokens",
       goal: "",
@@ -389,6 +451,7 @@ function persist() {
 }
 
 function hydrateDeckForm() {
+  document.querySelector("#deck-type").value = state.deck.type;
   document.querySelector("#deck-strategy").value = state.deck.strategy;
   document.querySelector("#deck-goal").value = state.deck.goal;
   document.querySelector("#must-play").value = state.deck.mustPlay.join(", ");
@@ -441,6 +504,16 @@ function describeColors(colors) {
   };
 
   return colors.map((color) => names[color]).join(" / ");
+}
+
+function describeDeckType(type) {
+  return type === "commander" ? "Commander deck" : "60-card deck";
+}
+
+function describeDeckLens(type) {
+  return type === "commander"
+    ? "Longer multiplayer shell with ramp, interaction, and engine cards."
+    : "Lean 60-card build with tighter curve and more duplicates.";
 }
 
 function titleCase(value) {
