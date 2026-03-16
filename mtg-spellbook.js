@@ -108,7 +108,7 @@ function renderLastCard() {
 function renderDeckSummary() {
   const deck = state.deck;
 
-  if (!deck.colors.length && !deck.mustPlay.length && !deck.goal) {
+  if (!deck.colors.length && !deck.mustPlay.length && !deck.goal && deck.strategy === "tokens") {
     deckSummary.className = "deck-summary empty-state";
     deckSummary.textContent = "Choose colors, a strategy, and a few anchor cards to generate recommendations.";
     return;
@@ -245,7 +245,7 @@ function buildSuggestions() {
   const anchors = deck.mustPlay.map((name) => name.toLowerCase());
   const colorSet = new Set(deck.colors);
 
-  if (!deck.colors.length && !deck.mustPlay.length && !deck.goal) {
+  if (!deck.colors.length && !deck.mustPlay.length && !deck.goal && deck.strategy === "tokens") {
     return [];
   }
 
