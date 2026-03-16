@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Spellbook</title>
+  <link rel="stylesheet" href="mtg-spellbook.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero__copy">
+        <img
+          class="hero__logo"
+          src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Magicthegathering-logo.svg"
+          alt="Magic: The Gathering"
+        >
+        <h1>Explain cards. Check fit. Build better decks.</h1>
+        <p class="hero__body">
+          MTG Spellbook helps you look up a card, translate rules text into plain English,
+          and get suggestions based on your colors, strategy, and must-play cards.
+        </p>
+      </div>
+      <aside class="hero__card">
+        <p class="hero__label">What it does</p>
+        <ul class="hero__list">
+          <li>Search a card by name</li>
+          <li>Explain what it means in normal language</li>
+          <li>Capture colors and deck goals</li>
+          <li>Suggest cards to add next</li>
+        </ul>
+      </aside>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel panel--wide">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Card Lookup</p>
+            <h2>Search a card and get a clearer explanation</h2>
+          </div>
+          <p class="panel__hint">Uses Scryfall card data in the browser, so exact names or close matches both work well.</p>
+        </div>
+
+        <form id="card-search-form" class="search-bar">
+          <input type="text" id="card-search-input" placeholder="Lightning Greaves, Sol Ring, Rhystic Study" required>
+          <button class="button" type="submit">Search card</button>
+        </form>
+
+        <div id="card-result" class="card-result empty-state">Search a Magic card to see its oracle text, plain-English explanation, and deck role.</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Deck Intent</p>
+            <h2>Tell the app what you want to build</h2>
+          </div>
+        </div>
+
+        <form id="deck-form" class="stack-form">
+          <fieldset class="color-fieldset">
+            <legend>Colors</legend>
+            <label class="mana-option mana-option--white"><input type="checkbox" value="W"><span class="mana-symbol mana-symbol--white" aria-hidden="true"></span> White</label>
+            <label class="mana-option mana-option--blue"><input type="checkbox" value="U"><span class="mana-symbol mana-symbol--blue" aria-hidden="true"></span> Blue</label>
+            <label class="mana-option mana-option--black"><input type="checkbox" value="B"><span class="mana-symbol mana-symbol--black" aria-hidden="true"></span> Black</label>
+            <label class="mana-option mana-option--red"><input type="checkbox" value="R"><span class="mana-symbol mana-symbol--red" aria-hidden="true"></span> Red</label>
+            <label class="mana-option mana-option--green"><input type="checkbox" value="G"><span class="mana-symbol mana-symbol--green" aria-hidden="true"></span> Green</label>
+          </fieldset>
+
+          <label>
+            Strategy
+            <select id="deck-strategy">
+              <option value="tokens">Tokens</option>
+              <option value="control">Control</option>
+              <option value="aggro">Aggro</option>
+              <option value="ramp">Ramp</option>
+              <option value="graveyard">Graveyard</option>
+              <option value="lifegain">Lifegain</option>
+              <option value="spells">Spells Matter</option>
+              <option value="artifacts">Artifacts</option>
+              <option value="counters">+1/+1 Counters</option>
+              <option value="sacrifice">Sacrifice</option>
+            </select>
+          </label>
+
+          <label>
+            What you want the deck to do
+            <textarea id="deck-goal" rows="3" placeholder="Go wide with tokens, protect the board, and win through anthem effects."></textarea>
+          </label>
+
+          <label>
+            Must-play cards
+            <textarea id="must-play" rows="4" placeholder="Mondrak, Cathars' Crusade, Anointed Procession"></textarea>
+          </label>
+
+          <div class="form-actions">
+            <button class="button" type="submit">Build suggestions</button>
+            <button class="ghost-button" type="button" id="use-last-card">Use looked-up card</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Current Plan</p>
+            <h2>Deck summary</h2>
+          </div>
+        </div>
+        <div id="deck-summary" class="deck-summary empty-state">Choose colors, a strategy, and a few anchor cards to generate recommendations.</div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Suggestions</p>
+            <h2>Cards to consider adding</h2>
+          </div>
+          <p class="panel__hint">These suggestions are based on your colors, strategy, and included cards, with lightweight synergy notes.</p>
+        </div>
+        <div id="suggestion-list" class="suggestion-list empty-state">No suggestions yet. Build a deck plan to see recommended cards.</div>
+      </section>
+    </main>
+  </div>
+
+  <script src="mtg-spellbook.js"></script>
+</body>
+</html>
