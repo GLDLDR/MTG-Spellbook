@@ -368,31 +368,24 @@ function fitsColors(cardColors, selectedColors) {
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return {
-      lastCard: saved?.lastCard || null,
-      deck: {
-        colors: Array.isArray(saved?.deck?.colors) ? saved.deck.colors : [],
-        strategy: saved?.deck?.strategy || "tokens",
-        goal: saved?.deck?.goal || "",
-        mustPlay: Array.isArray(saved?.deck?.mustPlay) ? saved.deck.mustPlay : []
-      }
-    };
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
-    return {
-      lastCard: null,
-      deck: {
-        colors: [],
-        strategy: "tokens",
-        goal: "",
-        mustPlay: []
-      }
-    };
+    // Ignore storage cleanup errors and fall back to a fresh in-memory state.
   }
+
+  return {
+    lastCard: null,
+    deck: {
+      colors: [],
+      strategy: "tokens",
+      goal: "",
+      mustPlay: []
+    }
+  };
 }
 
 function persist() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // This app now resets on refresh, so we intentionally do not persist state.
 }
 
 function hydrateDeckForm() {
